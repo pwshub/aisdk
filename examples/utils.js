@@ -21,9 +21,9 @@
 
 /**
  * Runs a single test case and measures duration.
- * @param {import('../index.js').AskFn} ask
+ * @param {import('../src/index.js').AskFn} ask
  * @param {string} prompt
- * @param {import('../index.js').AskParams} [options]
+ * @param {import('../src/index.js').AskParams} [options]
  * @returns {Promise<TestResult>}
  */
 export const runTest = async (ask, prompt, options = {}) => {
@@ -76,17 +76,18 @@ export const printResult = (result, modelId) => {
 
 /**
  * Runs multiple test cases for a provider.
- * @param {import('../index.js').AskFn} ask
+ * @param {import('../src/index.js').AskFn} ask
  * @param {string[]} modelIds
  * @param {string[]} prompts
- * @param {import('../index.js').AskParams} [options]
+ * @param {import('../src/index.js').AskParams} [options]
+ * @param {string} apikey
  */
-export const runEvalSuite = async (ask, modelIds, prompts, options = {}) => {
+export const runEvalSuite = async (ask, modelIds, prompts, options = {}, apikey) => {
   const results = []
 
   for (const modelId of modelIds) {
     for (const prompt of prompts) {
-      const result = await runTest(ask, prompt, { ...options, model: modelId })
+      const result = await runTest(ask, prompt, { ...options, model: modelId, apikey })
       results.push({ modelId, prompt, result })
       printResult(result, modelId)
 

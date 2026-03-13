@@ -10,17 +10,19 @@ import { validateAskOptions } from '../src/validation.js'
 
 describe('validateAskOptions', () => {
   describe('required fields', () => {
-    it('should pass with valid model and prompt', () => {
+    it('should pass with valid model, apikey and prompt', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o', prompt: 'Hello',
+          model: 'gpt-4o', apikey: 'test-key', prompt: 'Hello',
         })
       })
     })
 
     it('should throw when model is missing', () => {
       assert.throws(
-        () => validateAskOptions({ prompt: 'Hello' }),
+        () => validateAskOptions({
+          apikey: 'test-key', prompt: 'Hello',
+        }),
         /"model" must be a non-empty string/
       )
     })
@@ -28,7 +30,7 @@ describe('validateAskOptions', () => {
     it('should throw when model is empty string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: '', prompt: 'Hello',
+          model: '', apikey: 'test-key', prompt: 'Hello',
         }),
         /"model" must be a non-empty string/
       )
@@ -37,15 +39,44 @@ describe('validateAskOptions', () => {
     it('should throw when model is not a string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 123, prompt: 'Hello',
+          model: 123, apikey: 'test-key', prompt: 'Hello',
         }),
         /"model" must be a non-empty string/
       )
     })
 
+    it('should throw when apikey is missing', () => {
+      assert.throws(
+        () => validateAskOptions({
+          model: 'gpt-4o', prompt: 'Hello',
+        }),
+        /"apikey" must be a non-empty string/
+      )
+    })
+
+    it('should throw when apikey is empty string', () => {
+      assert.throws(
+        () => validateAskOptions({
+          model: 'gpt-4o', apikey: '', prompt: 'Hello',
+        }),
+        /"apikey" must be a non-empty string/
+      )
+    })
+
+    it('should throw when apikey is not a string', () => {
+      assert.throws(
+        () => validateAskOptions({
+          model: 'gpt-4o', apikey: 123, prompt: 'Hello',
+        }),
+        /"apikey" must be a non-empty string/
+      )
+    })
+
     it('should throw when prompt is missing', () => {
       assert.throws(
-        () => validateAskOptions({ model: 'gpt-4o' }),
+        () => validateAskOptions({
+          model: 'gpt-4o', apikey: 'test-key',
+        }),
         /"prompt" must be a non-empty string/
       )
     })
@@ -53,7 +84,7 @@ describe('validateAskOptions', () => {
     it('should throw when prompt is empty string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o', prompt: '',
+          model: 'gpt-4o', apikey: 'test-key', prompt: '',
         }),
         /"prompt" must be a non-empty string/
       )
@@ -62,7 +93,7 @@ describe('validateAskOptions', () => {
     it('should throw when prompt is not a string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o', prompt: 123,
+          model: 'gpt-4o', apikey: 'test-key', prompt: 123,
         }),
         /"prompt" must be a non-empty string/
       )
@@ -73,7 +104,7 @@ describe('validateAskOptions', () => {
     it('should pass with valid system prompt', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           system: 'You are helpful',
         })
@@ -83,7 +114,7 @@ describe('validateAskOptions', () => {
     it('should throw when system is not a string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           system: 123,
         }),
@@ -96,7 +127,7 @@ describe('validateAskOptions', () => {
     it('should pass with valid temperature', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           temperature: 0.5,
         })
@@ -106,7 +137,7 @@ describe('validateAskOptions', () => {
     it('should throw when temperature is not a number', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           temperature: 'hot',
         }),
@@ -117,7 +148,7 @@ describe('validateAskOptions', () => {
     it('should pass with valid maxTokens', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           maxTokens: 100,
         })
@@ -127,7 +158,7 @@ describe('validateAskOptions', () => {
     it('should throw when maxTokens is not a number', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           maxTokens: '100',
         }),
@@ -138,7 +169,7 @@ describe('validateAskOptions', () => {
     it('should pass with all optional number fields', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           temperature: 0.5,
           maxTokens: 100,
@@ -156,7 +187,7 @@ describe('validateAskOptions', () => {
     it('should pass with valid messages', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           messages: [
             {
@@ -176,7 +207,7 @@ describe('validateAskOptions', () => {
     it('should throw when messages is not an array', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           messages: 'not an array',
         }),
@@ -187,7 +218,7 @@ describe('validateAskOptions', () => {
     it('should throw when message role is invalid', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           messages: [{
             role: 'bot', content: 'Hi',
@@ -200,7 +231,7 @@ describe('validateAskOptions', () => {
     it('should throw when message content is not a string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           messages: [{
             role: 'user', content: 123,
@@ -215,7 +246,7 @@ describe('validateAskOptions', () => {
     it('should pass with valid fallbacks', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           fallbacks: ['gpt-4o-mini', 'claude-sonnet'],
         })
@@ -225,7 +256,7 @@ describe('validateAskOptions', () => {
     it('should throw when fallbacks is not an array', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           fallbacks: 'not an array',
         }),
@@ -236,7 +267,7 @@ describe('validateAskOptions', () => {
     it('should throw when fallback item is not a string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           fallbacks: [123],
         }),
@@ -249,7 +280,7 @@ describe('validateAskOptions', () => {
     it('should pass with string stop', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           stop: 'END',
         })
@@ -259,7 +290,7 @@ describe('validateAskOptions', () => {
     it('should pass with array of strings stop', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           stop: ['END', 'STOP'],
         })
@@ -269,7 +300,7 @@ describe('validateAskOptions', () => {
     it('should throw when stop is not string or array', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           stop: 123,
         }),
@@ -280,7 +311,7 @@ describe('validateAskOptions', () => {
     it('should throw when stop array contains non-string', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           stop: ['END', 123],
         }),
@@ -293,7 +324,7 @@ describe('validateAskOptions', () => {
     it('should pass with valid providerOptions object', () => {
       assert.doesNotThrow(() => {
         validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           providerOptions: { safetySettings: [] },
         })
@@ -303,7 +334,7 @@ describe('validateAskOptions', () => {
     it('should throw when providerOptions is not an object', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           providerOptions: 'not an object',
         }),
@@ -314,7 +345,7 @@ describe('validateAskOptions', () => {
     it('should throw when providerOptions is an array', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           providerOptions: [],
         }),
@@ -325,7 +356,7 @@ describe('validateAskOptions', () => {
     it('should throw when providerOptions is null', () => {
       assert.throws(
         () => validateAskOptions({
-          model: 'gpt-4o',
+          model: 'gpt-4o', apikey: 'test-key',
           prompt: 'Hello',
           providerOptions: null,
         }),

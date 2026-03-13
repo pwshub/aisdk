@@ -8,6 +8,7 @@
 /**
  * @typedef {Object} AskParams
  * @property {string} model
+ * @property {string} apikey
  * @property {string} prompt
  * @property {string} [system]
  * @property {import('../index.js').Message[]} [messages]
@@ -35,6 +36,10 @@ export const validateAskOptions = (params) => {
   // Required fields
   if (!params.model || typeof params.model !== 'string') {
     errors.push('"model" must be a non-empty string')
+  }
+
+  if (!params.apikey || typeof params.apikey !== 'string') {
+    errors.push('"apikey" must be a non-empty string')
   }
 
   if (!params.prompt || typeof params.prompt !== 'string') {

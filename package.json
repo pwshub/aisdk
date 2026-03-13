@@ -1,6 +1,6 @@
 {
   "name": "@ndaidong/aisdk",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, and DeepSeek with automatic param normalization and fallback support",
   "publishConfig": {
     "registry": "https://npm.pkg.github.com/"
@@ -8,14 +8,9 @@
   "type": "module",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js",
-    "./errors": "./src/errors.js",
-    "./registry": "./src/registry.js",
-    "./config": "./src/config.js",
-    "./providers": "./src/providers.js",
-    "./coerce": "./src/coerce.js",
-    "./validation": "./src/validation.js"
+    ".": "./src/index.js"
   },
+  "types": "./src/index.js",
   "files": [
     "src",
     "models.json"

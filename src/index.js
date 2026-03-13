@@ -2,11 +2,12 @@
  * @fileoverview Thin AI client — single unified interface for text generation.
  *
  * @example Basic usage
- * import { createAi } from './index.js'
+ * import { createAi } from '@ndaidong/aisdk'
  *
  * const ai = createAi()
  * const result = await ai.ask({
  *   model: 'claude-sonnet-4-20250514',
+ *   apikey: 'your-api-key',
  *   prompt: 'What is the capital of Vietnam?',
  *   temperature: 0.5,
  * })
@@ -16,6 +17,7 @@
  * @example With fallbacks
  * const result = await ai.ask({
  *   model: 'gpt-4o',
+ *   apikey: 'your-openai-key',
  *   prompt: '...',
  *   fallbacks: ['gpt-4o-mini', 'claude-haiku-4-5-20251001'],
  * })
@@ -26,6 +28,7 @@
  * @example Google provider-specific options
  * const result = await ai.ask({
  *   model: 'gemini-2.0-flash',
+ *   apikey: 'your-google-key',
  *   prompt: '...',
  *   providerOptions: {
  *     safetySettings: [
@@ -59,6 +62,7 @@ export {
 /**
  * @typedef {Object} AskParams
  * @property {string} model                       - Model ID (must exist in models.json)
+ * @property {string} apikey                      - API key for the provider
  * @property {string} prompt                      - The user message
  * @property {string} [system]                    - Optional system prompt
  * @property {string[]} [fallbacks]               - Ordered list of fallback model IDs
@@ -85,30 +89,6 @@ export {
  * @property {string} model           - The model that actually responded (may differ if fallback was used)
  * @property {Usage} usage
  */
-
-/** @type {Record<string, string>} */
-const ENV_KEYS = {
-  openai: 'OPENAI_API_KEY',
-  anthropic: 'ANTHROPIC_API_KEY',
-  google: 'GOOGLE_API_KEY',
-  dashscope: 'DASHSCOPE_API_KEY',
-  deepseek: 'DEEPSEEK_API_KEY',
-}
-
-/**
- * Reads the API key for a provider from environment variables.
- * @param {string} providerId
- * @returns {string}
- * @throws {Error}
- */
-const resolveKey = (providerId) => {
-  const envVar = ENV_KEYS[providerId]
-  const key = process.env[envVar]
-  if (!key) {
-    throw new Error(`Missing env var: ${envVar}`)
-  }
-  return key
-}
 
 /**
  * Picks generation config keys from AskParams, dropping routing params.
@@ -158,7 +138,7 @@ const callModel = async (modelId, params, gatewayUrl) => {
     provider: providerId, name: modelName,
   } = record
 
-  const apiKey = resolveKey(providerId)
+  const { apikey } = params
   const adapter = getAdapter(providerId)
 
   const genConfig = extractGenConfig(params)
@@ -183,14 +163,14 @@ const callModel = async (modelId, params, gatewayUrl) => {
     },
   ]
 
-  const url = gatewayUrl ?? adapter.url(modelName, apiKey)
+  const url = gatewayUrl ?? adapter.url(modelName, apikey)
   const body = adapter.buildBody(modelName, messages, normalizedConfig, providerOptions)
 
   let res
   try {
     res = await fetch(url, {
       method: 'POST',
-      headers: adapter.headers(apiKey),
+      headers: adapter.headers(apikey),
       body: JSON.stringify(body),
     })
   } catch (networkErr) {

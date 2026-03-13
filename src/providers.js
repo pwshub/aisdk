@@ -28,8 +28,8 @@
 
 /**
  * @typedef {Object} ProviderAdapter
- * @property {(apiKey: string) => Record<string, string>} headers
- * @property {(modelName: string, apiKey: string) => string} url
+ * @property {(apikey: string) => Record<string, string>} headers
+ * @property {(modelName: string, apikey: string) => string} url
  * @property {(modelName: string, messages: Message[], config: Record<string, unknown>, providerOptions: Record<string, unknown>) => Record<string, unknown>} buildBody
  * @property {(data: Record<string, unknown>) => string} extractText
  * @property {(data: Record<string, unknown>) => RawUsage} extractUsage
@@ -37,8 +37,8 @@
 
 /** @type {ProviderAdapter} */
 const openai = {
-  headers: (apiKey) => ({
-    Authorization: `Bearer ${apiKey}`,
+  headers: (apikey) => ({
+    Authorization: `Bearer ${apikey}`,
     'Content-Type': 'application/json',
   }),
   url: () => 'https://api.openai.com/v1/chat/completions',
@@ -89,8 +89,8 @@ const openai = {
 
 /** @type {ProviderAdapter} */
 const anthropic = {
-  headers: (apiKey) => ({
-    'x-api-key': apiKey,
+  headers: (apikey) => ({
+    'x-api-key': apikey,
     'anthropic-version': '2023-06-01',
     'Content-Type': 'application/json',
   }),
@@ -126,8 +126,8 @@ const anthropic = {
 /** @type {ProviderAdapter} */
 const google = {
   headers: () => ({ 'Content-Type': 'application/json' }),
-  url: (modelName, apiKey) =>
-    `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apiKey}`,
+  url: (modelName, apikey) =>
+    `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${apikey}`,
   buildBody: (modelName, messages, config, providerOptions) => {
     const system = messages.find((m) => m.role === 'system')?.content
     const contents = messages
@@ -170,8 +170,8 @@ const google = {
 
 /** @type {ProviderAdapter} */
 const dashscope = {
-  headers: (apiKey) => ({
-    Authorization: `Bearer ${apiKey}`,
+  headers: (apikey) => ({
+    Authorization: `Bearer ${apikey}`,
     'Content-Type': 'application/json',
   }),
   // International users should use dashscope-intl.aliyuncs.com
@@ -204,8 +204,8 @@ const dashscope = {
 
 /** @type {ProviderAdapter} */
 const deepseek = {
-  headers: (apiKey) => ({
-    Authorization: `Bearer ${apiKey}`,
+  headers: (apikey) => ({
+    Authorization: `Bearer ${apikey}`,
     'Content-Type': 'application/json',
   }),
   url: () => 'https://api.deepseek.com/chat/completions',
