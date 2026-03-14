@@ -37,10 +37,11 @@
  *     thinkingConfig: { thinkingBudget: 1024 },
  *   },
  * })
+ *
  */
 
 import {
-  getModel, listModels,
+  getModel, listModels, setModels,
 } from './registry.js'
 import { normalizeConfig } from './config.js'
 import { coerceConfig } from './coerce.js'
@@ -61,7 +62,7 @@ export {
 
 /**
  * @typedef {Object} AskParams
- * @property {string} model                       - Model ID (must exist in models.json)
+ * @property {string} model                       - Model ID (must be registered via setModels())
  * @property {string} apikey                      - API key for the provider
  * @property {string} prompt                      - The user message
  * @property {string} [system]                    - Optional system prompt
@@ -228,7 +229,7 @@ export const createAi = (opts = {}) => {
   const ask = async (params) => {
     // Validate input structure and types
     try {
-      await validateAskOptions(params)
+      validateAskOptions(params)
     } catch (error) {
       throw new InputError('Invalid options', {
         status: 400,
@@ -264,3 +265,5 @@ export const createAi = (opts = {}) => {
     ask, listModels,
   }
 }
+
+export { setModels }

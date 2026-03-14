@@ -1,28 +1,13 @@
 /**
- * @fileoverview Model registry — loads from a Directus-exported JSON array.
+ * @fileoverview Model registry — in-memory store for model records.
  *
- * The JSON is an array of model records matching the Directus collection schema.
- * It is indexed by model ID at load time for O(1) lookups at runtime.
+ * Models are loaded programmatically via setModels() from external sources
+ * (CMS, API, or local files for evaluation). This module provides O(1) lookups
+ * at runtime via a Map indexed by model ID.
  *
  * `supportedParams` is optional per record. When absent, the provider's
- * default param set is used. This allows the field to be added to Directus
- * incrementally without breaking anything.
+ * default param set is used.
  *
- * To update: export from Directus → replace models.json (no conversion needed).
- */
-
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import {
-  join, dirname, resolve,
-} from 'node:path'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-// models.json is in the project root, one level up from src/
-const PROJECT_ROOT = resolve(__dirname, '..')
-
-/**
  * @typedef {'openai'|'anthropic'|'google'|'dashscope'|'deepseek'} ProviderId
  */
 
@@ -57,31 +42,70 @@ export const PROVIDER_DEFAULT_PARAMS = {
   deepseek: ['temperature', 'maxTokens', 'topP', 'frequencyPenalty', 'presencePenalty', 'stop'],
 }
 
-/**
- * Loads the models.json array and indexes it by model ID.
- * Sync read is intentional — runs once at module init, not per-request.
- *
- * @returns {Map<string, ModelRecord>}
- */
-const loadRegistry = () => {
-  const filePath = join(PROJECT_ROOT, 'models.json')
-  let rows
-
-  try {
-    rows = JSON.parse(readFileSync(filePath, 'utf-8'))
-  } catch (err) {
-    throw new Error(`Failed to load model registry from ${filePath}: ${err.message}`)
-  }
-
-  if (!Array.isArray(rows)) {
-    throw new Error(`models.json must be a JSON array. Got: ${typeof rows}`)
-  }
-
-  return new Map(rows.map((row) => [row.id, row]))
-}
+/** @type {ProviderId[]} */
+const VALID_PROVIDERS = ['openai', 'anthropic', 'google', 'dashscope', 'deepseek']
 
 /** @type {Map<string, ModelRecord>} */
-const REGISTRY = loadRegistry()
+let REGISTRY = new Map()
+
+/**
+ * Validates a single model record structure and types.
+ *
+ * @param {Object} model - The model record to validate
+ * @param {number} index - Index in the array for error messages
+ * @throws {Error} When validation fails
+ */
+const validateModelRecord = (model, index) => {
+  const errors = []
+
+  // Check required string fields
+  if (!model.id || typeof model.id !== 'string') {
+    errors.push('"id" must be a non-empty string')
+  }
+
+  if (!model.name || typeof model.name !== 'string') {
+    errors.push('"name" must be a non-empty string')
+  }
+
+  // Check provider is valid
+  if (!model.provider || typeof model.provider !== 'string') {
+    errors.push('"provider" must be a string')
+  } else if (!VALID_PROVIDERS.includes(model.provider)) {
+    errors.push(`"provider" must be one of: ${VALID_PROVIDERS.join(', ')}. Got: "${model.provider}"`)
+  }
+
+  // Check required number fields (must be non-negative)
+  const numberFields = ['input_price', 'output_price', 'cache_price', 'max_in', 'max_out']
+  for (const field of numberFields) {
+    if (typeof model[field] !== 'number') {
+      errors.push(`"${field}" must be a number`)
+    } else if (model[field] < 0) {
+      errors.push(`"${field}" must be non-negative, got: ${model[field]}`)
+    }
+  }
+
+  // Check enable is boolean
+  if (typeof model.enable !== 'boolean') {
+    errors.push('"enable" must be a boolean')
+  }
+
+  // Check optional supportedParams if present
+  if (model.supportedParams !== undefined) {
+    if (!Array.isArray(model.supportedParams)) {
+      errors.push('"supportedParams" must be an array')
+    } else {
+      model.supportedParams.forEach((param, i) => {
+        if (typeof param !== 'string') {
+          errors.push(`"supportedParams[${i}]" must be a string`)
+        }
+      })
+    }
+  }
+
+  if (errors.length > 0) {
+    throw new Error(`Invalid model record at index ${index}: ${errors.join('; ')}`)
+  }
+}
 
 /**
  * Looks up a model by ID, validates it is enabled, and resolves its
@@ -117,3 +141,24 @@ export const getModel = (modelId) => {
  */
 export const listModels = () =>
   [...REGISTRY.values()].filter((m) => m.enable)
+
+/**
+ * Programmatically sets the model registry from an array of model records.
+ * Use this when loading models from a CMS or other external source instead of
+ * the built-in models.json file.
+ *
+ * @param {ModelRecord[]} models - Array of model records (same format as models.json)
+ * @throws {Error} When models is not an array or contains invalid records
+ */
+export const setModels = (models) => {
+  if (!Array.isArray(models)) {
+    throw new Error(`setModels expects an array. Got: ${typeof models}`)
+  }
+
+  // Validate each model record strictly
+  models.forEach((model, index) => {
+    validateModelRecord(model, index)
+  })
+
+  REGISTRY = new Map(models.map((model) => [model.id, model]))
+}

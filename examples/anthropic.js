@@ -32,9 +32,7 @@ const main = async () => {
   const ai = createAi()
 
   // Note: temperature is not specified to let each model use its default
-  await runEvalSuite(ai.ask, MODELS, PROMPTS, {
-    maxTokens: 256,
-  }, apikey)
+  await runEvalSuite(ai.ask, MODELS, PROMPTS, apikey, { maxTokens: 256 })
 }
 
 main().catch(console.error)

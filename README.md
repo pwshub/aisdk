@@ -174,15 +174,48 @@ const result = await ai.ask({
 
 ## Supported Models
 
-See `models.json` for the complete list of supported models. Each model record includes:
+This library does not ship with a predefined list of models. Instead, it accepts **any model** from the supported providers:
+
+- **OpenAI**: Any OpenAI model
+- **Anthropic**: Any Anthropic model
+- **Google**: Any Google model
+- **DashScope**: Any DashScope model
+- **DeepSeek**: Any DeepSeek model
+
+### Loading Models
+
+Models are loaded programmatically via `setModels()` from external sources (CMS, API, or local files for evaluation):
+
+```javascript
+import { createAi, setModels } from '@ndaidong/aisdk'
+
+// Load models from your CMS or API
+const modelsFromCms = await fetch('https://cms.example.com/api/models').then(r => r.json())
+setModels(modelsFromCms)
+
+const ai = createAi()
+const result = await ai.ask({
+  model: 'gemini-2.5-flash',
+  apikey: 'your-api-key',
+  prompt: 'Hello!',
+})
+```
+
+### Model Record Format
+
+Each model record should include:
 - `id`: Model identifier used in requests
-- `name`: Official model name
+- `name`: Official model name (used in API calls)
 - `provider`: Provider ID (openai, anthropic, google, dashscope, deepseek)
 - `input_price`: Price per 1M input tokens (USD)
 - `output_price`: Price per 1M output tokens (USD)
 - `cache_price`: Price per 1M cached tokens (USD)
 - `max_in`: Maximum input tokens (context window)
 - `max_out`: Maximum output tokens
+- `enable`: Boolean to enable/disable the model
+- `supportedParams` (optional): Array of supported parameter names
+
+> **Note**: The `examples/` folder includes `models.json` as a reference for running evaluation scripts.
 
 ## Error Handling
 

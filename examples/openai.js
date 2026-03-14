@@ -33,9 +33,7 @@ const main = async () => {
 
   // Note: temperature is not specified to let each model use its default
   // (gpt-5-nano only supports temperature=1)
-  await runEvalSuite(ai.ask, MODELS, PROMPTS, {
-    maxTokens: 256,
-  }, apikey)
+  await runEvalSuite(ai.ask, MODELS, PROMPTS, apikey, { maxTokens: 256 })
 }
 
 main().catch(console.error)

@@ -1,41 +1,26 @@
-# Dependencies
-node_modules/
+node_modules
+coverage
+coverage.lcov
 
-# Build output
-dist/
-build/
+package-lock.json
+pnpm-lock.yaml
+bun.lock
 
-# Logs
-logs
-*.log
-npm-debug.log*
-
-# Runtime data
-pids
-*.pid
-*.seed
-*.pid.lock
-
-# Coverage directory
-coverage/
-.nyc_output/
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-*~
-
-# OS
-.DS_Store
-Thumbs.db
-
-# Environment variables
 .env
-.env.local
-.env.*.local
 
-# Temporary files
-tmp/
-temp/
+dist
+storage
+
+# ===========================================
+# AI Configuration
+# ===========================================
+
+# Ignore these (private session data):
+.ai/sessions/
+.ai/skills/
+.ai/cache/
+.ai/tmp/
+.ai/*.tmp
+
+# Editor AI Chat History
+.zed/chat/

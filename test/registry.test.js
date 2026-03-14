@@ -2,13 +2,26 @@
  * @fileoverview Tests for registry module.
  */
 
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { join, dirname } from 'node:path'
 import {
-  describe, it,
+  describe, it, before,
 } from 'node:test'
 import assert from 'node:assert'
 import {
-  getModel, listModels, PROVIDER_DEFAULT_PARAMS,
+  getModel, listModels, setModels, PROVIDER_DEFAULT_PARAMS,
 } from '../src/registry.js'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
+const PROJECT_ROOT = join(__dirname, '..')
+
+// Load models from examples/models.json before running tests
+const models = JSON.parse(readFileSync(join(PROJECT_ROOT, 'examples', 'models.json'), 'utf-8'))
+before(() => {
+  setModels(models)
+})
 
 describe('registry', () => {
   describe('PROVIDER_DEFAULT_PARAMS', () => {
@@ -104,6 +117,205 @@ describe('registry', () => {
         assert.ok(typeof model.max_in === 'number', 'model should have max_in')
         assert.ok(typeof model.max_out === 'number', 'model should have max_out')
       })
+    })
+  })
+
+  describe('setModels', () => {
+    it('should throw when models is not an array', () => {
+      assert.throws(
+        () => setModels({}),
+        /setModels expects an array/
+      )
+      assert.throws(
+        () => setModels(null),
+        /setModels expects an array/
+      )
+      assert.throws(
+        () => setModels('string'),
+        /setModels expects an array/
+      )
+    })
+
+    it('should throw when model record is missing required fields', () => {
+      assert.throws(
+        () => setModels([{ id: 'test', name: 'Test', provider: 'openai' }]),
+        /"input_price" must be a number/
+      )
+      assert.throws(
+        () => setModels([{ id: 'test', name: 'Test', provider: 'openai', input_price: 0.1, output_price: 0.5, cache_price: 0, max_in: 1000, max_out: 100 }]),
+        /"enable" must be a boolean/
+      )
+    })
+
+    it('should throw when model has empty id or name', () => {
+      assert.throws(
+        () => setModels([{ id: '', name: 'Test', provider: 'openai', input_price: 0.1, output_price: 0.5, cache_price: 0, max_in: 1000, max_out: 100, enable: true }]),
+        /"id" must be a non-empty string/
+      )
+      assert.throws(
+        () => setModels([{ id: 'test', name: '', provider: 'openai', input_price: 0.1, output_price: 0.5, cache_price: 0, max_in: 1000, max_out: 100, enable: true }]),
+        /"name" must be a non-empty string/
+      )
+    })
+
+    it('should throw when provider is invalid', () => {
+      assert.throws(
+        () => setModels([{ id: 'test', name: 'Test', provider: 'invalid', input_price: 0.1, output_price: 0.5, cache_price: 0, max_in: 1000, max_out: 100, enable: true }]),
+        /"provider" must be one of:/
+      )
+    })
+
+    it('should throw when numeric fields are negative', () => {
+      assert.throws(
+        () => setModels([{ id: 'test', name: 'Test', provider: 'openai', input_price: -1, output_price: 0.5, cache_price: 0, max_in: 1000, max_out: 100, enable: true }]),
+        /"input_price" must be non-negative/
+      )
+    })
+
+    it('should throw when supportedParams is invalid', () => {
+      assert.throws(
+        () => setModels([{ id: 'test', name: 'Test', provider: 'openai', input_price: 0.1, output_price: 0.5, cache_price: 0, max_in: 1000, max_out: 100, enable: true, supportedParams: 'not-array' }]),
+        /"supportedParams" must be an array/
+      )
+      assert.throws(
+        () => setModels([{ id: 'test', name: 'Test', provider: 'openai', input_price: 0.1, output_price: 0.5, cache_price: 0, max_in: 1000, max_out: 100, enable: true, supportedParams: [123] }]),
+        /"supportedParams\[0\]" must be a string/
+      )
+    })
+
+    it('should set models from array and override registry', () => {
+      const customModels = [
+        {
+          id: 'custom-model-1',
+          name: 'Custom Model 1',
+          provider: 'openai',
+          input_price: 0.5,
+          output_price: 1.5,
+          cache_price: 0.1,
+          max_in: 128000,
+          max_out: 4096,
+          enable: true,
+        },
+        {
+          id: 'custom-model-2',
+          name: 'Custom Model 2',
+          provider: 'anthropic',
+          input_price: 3,
+          output_price: 15,
+          cache_price: 0,
+          max_in: 200000,
+          max_out: 8192,
+          enable: false,
+        },
+      ]
+
+      setModels(customModels)
+
+      const { record } = getModel('custom-model-1')
+      assert.strictEqual(record.id, 'custom-model-1')
+      assert.strictEqual(record.provider, 'openai')
+      assert.strictEqual(record.input_price, 0.5)
+    })
+
+    it('should throw for disabled model after setModels', () => {
+      const customModels = [
+        {
+          id: 'disabled-custom',
+          name: 'Disabled Custom',
+          provider: 'google',
+          input_price: 0.1,
+          output_price: 0.5,
+          cache_price: 0,
+          max_in: 100000,
+          max_out: 2048,
+          enable: false,
+        },
+      ]
+
+      setModels(customModels)
+
+      assert.throws(
+        () => getModel('disabled-custom'),
+        /currently disabled/
+      )
+    })
+
+    it('listModels should return only enabled models after setModels', () => {
+      const customModels = [
+        {
+          id: 'enabled-1',
+          name: 'Enabled 1',
+          provider: 'openai',
+          input_price: 0.5,
+          output_price: 1.5,
+          cache_price: 0,
+          max_in: 128000,
+          max_out: 4096,
+          enable: true,
+        },
+        {
+          id: 'disabled-1',
+          name: 'Disabled 1',
+          provider: 'anthropic',
+          input_price: 3,
+          output_price: 15,
+          cache_price: 0,
+          max_in: 200000,
+          max_out: 8192,
+          enable: false,
+        },
+      ]
+
+      setModels(customModels)
+
+      const models = listModels()
+      assert.strictEqual(models.length, 1)
+      assert.strictEqual(models[0].id, 'enabled-1')
+    })
+
+    it('should use provider default params when model has no supportedParams', () => {
+      const customModels = [
+        {
+          id: 'no-params-model',
+          name: 'No Params Model',
+          provider: 'google',
+          input_price: 0.1,
+          output_price: 0.5,
+          cache_price: 0,
+          max_in: 100000,
+          max_out: 2048,
+          enable: true,
+        },
+      ]
+
+      setModels(customModels)
+
+      const { supportedParams } = getModel('no-params-model')
+      assert.ok(supportedParams.length > 0)
+      assert.ok(supportedParams.includes('temperature'))
+      assert.ok(supportedParams.includes('maxTokens'))
+    })
+
+    it('should use model-level supportedParams when provided', () => {
+      const customModels = [
+        {
+          id: 'custom-params-model',
+          name: 'Custom Params Model',
+          provider: 'openai',
+          input_price: 0.5,
+          output_price: 1.5,
+          cache_price: 0,
+          max_in: 128000,
+          max_out: 4096,
+          enable: true,
+          supportedParams: ['temperature', 'maxTokens', 'customParam'],
+        },
+      ]
+
+      setModels(customModels)
+
+      const { supportedParams } = getModel('custom-params-model')
+      assert.deepStrictEqual(supportedParams, ['temperature', 'maxTokens', 'customParam'])
     })
   })
 })
