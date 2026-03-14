@@ -1,28 +1,18 @@
-# Development files
-examples.js
-tests/
-*.test.js
+node_modules
+coverage
+coverage.lcov
 
-# Documentation
-*.md
-!README.md
+package-lock.json
+pnpm-lock.yaml
+bun.lock
 
-# Config files for development tools
-.eslintrc*
-.prettierrc*
-tsconfig.json
-vitest.config.js
-
-# IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Logs
-*.log
-npm-debug.log*
-
-# Environment
 .env
-.env.*
+
+dist
+storage
+
+examples
+test
+
+.rules
+.ai
