@@ -1,10 +1,10 @@
 {
   "name": "@pwshub/aisdk",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, and DeepSeek with automatic param normalization and fallback support",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ndaidong/aisdk"
+    "url": "https://github.com/pwshub/aisdk"
   },
   "engines": {
     "node": ">=22.0.0",
@@ -15,9 +15,10 @@
   "exports": {
     ".": "./src/index.js"
   },
-  "types": "./src/index.js",
+  "types": "./index.d.ts",
   "files": [
-    "src"
+    "src",
+    "index.d.ts"
   ],
   "scripts": {
     "test": "node --test test/*.test.js",
