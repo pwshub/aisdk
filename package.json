@@ -1,0 +1,54 @@
+{
+  "name": "@ndaidong/aisdk",
+  "version": "0.0.1",
+  "description": "A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, and DeepSeek with automatic param normalization and fallback support",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ndaidong/aisdk"
+  },
+  "engines": {
+    "node": ">=22.0.0",
+    "bun": ">=1.0.0"
+  },
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "types": "./src/index.js",
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "eslint src/ test/",
+    "lint:fix": "eslint src/ test/ --fix",
+    "eval:openai": "node examples/openai.js",
+    "eval:anthropic": "node examples/anthropic.js",
+    "eval:google": "node examples/google.js",
+    "eval:dashscope": "node examples/dashscope.js",
+    "eval:deepseek": "node examples/deepseek.js"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.0.3",
+    "globals": "^17.4.0"
+  },
+  "keywords": [
+    "ai",
+    "llm",
+    "openai",
+    "anthropic",
+    "google",
+    "gemini",
+    "claude",
+    "gpt",
+    "qwen",
+    "deepseek",
+    "chat",
+    "generation",
+    "sdk"
+  ],
+  "author": "ndaidong",
+  "license": "MIT"
+}

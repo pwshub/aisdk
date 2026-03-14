@@ -1,0 +1,45 @@
+# AI Assistant Rules
+
+## Philosophy
+- Minimalism.
+- Simple is better.
+- Clean code, easy to read.
+- Functional Programming.
+
+## Tech Stack
+- Runtime: Node.js, Bun, Deno
+- Database: PostgreSQL, Redis, Meilisearch
+- Backend: HonoJS
+- Templating: VentoJS
+- Frontend: Svelte, Astro
+- Styling: Native CSS (No Tailwind)
+- Language: JavaScript with JSDocs (No TypeScript)
+
+## Coding Standards
+- Read `.ai/CODING_STANDARDS.md` for more info
+- Respect eslint.config.js
+
+## When Writing Code
+- Read existing code patterns first
+- Follow the current coding style
+- Apply functional programming thinking
+- Handle errors explicitly
+- Keep dependencies minimal
+
+## Security Rules (CRITICAL)
+- NEVER output or request .env and example.env file contents
+- NEVER hardcode API keys, passwords, or secrets
+- NEVER send sensitive data to external AI services
+- Follow .aiignore file for excluded files
+- Read `.ai/SECURITY_POLICY.md` for more info
+
+## Testing
+- Write tests for critical business logic
+- Use simple test runners (node:test, bun:test, vitest)
+- No complex mocking frameworks unless necessary
+
+## When in Doubt
+- Ask for clarification before generating code.
+
+## Guideline for AI Agents
+- Read `.ai/README.md` to get overview.

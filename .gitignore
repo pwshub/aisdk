@@ -1,0 +1,28 @@
+node_modules
+coverage
+coverage.lcov
+
+package-lock.json
+pnpm-lock.yaml
+bun.lock
+
+.npmrc
+
+.env
+
+dist
+storage
+
+# ===========================================
+# AI Configuration
+# ===========================================
+
+# Ignore these (private session data):
+.ai/sessions/
+.ai/skills/
+.ai/cache/
+.ai/tmp/
+.ai/*.tmp
+
+# Editor AI Chat History
+.zed/chat/
