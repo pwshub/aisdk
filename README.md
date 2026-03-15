@@ -166,6 +166,36 @@ const result = await ai.ask({
 })
 ```
 
+### DashScope with Custom Region
+
+DashScope endpoints vary by region. Use `gatewayUrl` to specify your region:
+
+```javascript
+import { createAi } from '@pwshub/aisdk'
+
+// Singapore region
+const aiSingapore = createAi({
+  gatewayUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
+})
+
+// Virginia region (US)
+const aiUS = createAi({
+  gatewayUrl: 'https://dashscope-us.aliyuncs.com/compatible-mode/v1',
+})
+
+// Beijing region (China)
+const aiCN = createAi({
+  gatewayUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+})
+
+// Use the regional client
+const result = await aiSingapore.ask({
+  model: 'qwen3.5-plus',
+  apikey: process.env.DASHSCOPE_API_KEY,
+  prompt: 'Hello from Singapore!',
+})
+```
+
 ### DeepSeek
 
 ```javascript
