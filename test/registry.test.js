@@ -2,9 +2,6 @@
  * @fileoverview Tests for registry module.
  */
 
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { join, dirname } from 'node:path'
 import {
   describe, it, before,
 } from 'node:test'
@@ -12,15 +9,11 @@ import assert from 'node:assert'
 import {
   getModel, listModels, setModels, PROVIDER_DEFAULT_PARAMS,
 } from '../src/registry.js'
+import { DEFAULT_MODELS } from '../src/models.js'
 
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-const PROJECT_ROOT = join(__dirname, '..')
-
-// Load models from examples/models.json before running tests
-const models = JSON.parse(readFileSync(join(PROJECT_ROOT, 'examples', 'models.json'), 'utf-8'))
+// Use default models from src/models.js for testing
 before(() => {
-  setModels(models)
+  setModels(DEFAULT_MODELS)
 })
 
 describe('registry', () => {

@@ -38,10 +38,21 @@
  *   },
  * })
  *
+ * @example Using messages array for multi-turn conversations
+ * const result = await ai.ask({
+ *   model: 'claude-sonnet-4-20250514',
+ *   apikey: 'your-api-key',
+ *   messages: [
+ *     { role: 'user', content: 'What is the capital of Vietnam?' },
+ *     { role: 'assistant', content: 'The capital of Vietnam is Hanoi.' },
+ *     { role: 'user', content: 'What is its population?' },
+ *   ],
+ * })
+ *
  */
 
 import {
-  getModel, listModels, setModels,
+  getModel, listModels, setModels, addModels,
 } from './registry.js'
 import { normalizeConfig } from './config.js'
 import { coerceConfig } from './coerce.js'
@@ -64,8 +75,9 @@ export {
  * @typedef {Object} AskParams
  * @property {string} model                       - Model ID (must be registered via setModels())
  * @property {string} apikey                      - API key for the provider
- * @property {string} prompt                      - The user message
- * @property {string} [system]                    - Optional system prompt
+ * @property {string} [prompt]                    - The user message (alternative to messages)
+ * @property {string} [system]                    - Optional system prompt (used with prompt)
+ * @property {import('./providers.js').Message[]} [messages] - Array of messages with role and content (alternative to prompt)
  * @property {string[]} [fallbacks]               - Ordered list of fallback model IDs
  * @property {Record<string, unknown>} [providerOptions] - Provider-specific options merged into body
  * @property {number} [temperature]
@@ -152,11 +164,11 @@ const callModel = async (modelId, params, gatewayUrl) => {
   const normalizedConfig = normalizeConfig(coerced, providerId, supportedParams, modelId)
 
   const {
-    prompt, system, providerOptions = {},
+    prompt, system, messages, providerOptions = {},
   } = params
 
   /** @type {import('./providers.js').Message[]} */
-  const messages = [
+  const messageList = messages ?? [
     ...(system ? [{
       role: 'system', content: system,
     }] : []),
@@ -166,7 +178,7 @@ const callModel = async (modelId, params, gatewayUrl) => {
   ]
 
   const url = gatewayUrl ?? adapter.url(modelName, apikey)
-  const body = adapter.buildBody(modelName, messages, normalizedConfig, providerOptions)
+  const body = adapter.buildBody(modelName, messageList, normalizedConfig, providerOptions)
 
   let res
   try {
@@ -267,4 +279,4 @@ export const createAi = (opts = {}) => {
   }
 }
 
-export { setModels }
+export { addModels, setModels, listModels }

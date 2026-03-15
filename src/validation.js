@@ -9,7 +9,7 @@
  * @typedef {Object} AskParams
  * @property {string} model
  * @property {string} apikey
- * @property {string} prompt
+ * @property {string} [prompt]
  * @property {string} [system]
  * @property {import('../index.js').Message[]} [messages]
  * @property {number} [temperature]
@@ -42,8 +42,14 @@ export const validateAskOptions = (params) => {
     errors.push('"apikey" must be a non-empty string')
   }
 
-  if (!params.prompt || typeof params.prompt !== 'string') {
-    errors.push('"prompt" must be a non-empty string')
+  // Either prompt or messages must be provided (but not both required)
+  if (params.prompt === undefined && params.messages === undefined) {
+    errors.push('either "prompt" or "messages" must be provided')
+  }
+
+  // When using messages, system can still be provided (will be prepended)
+  if (params.prompt !== undefined && typeof params.prompt !== 'string') {
+    errors.push('"prompt" must be a string')
   }
 
   // Optional string fields
