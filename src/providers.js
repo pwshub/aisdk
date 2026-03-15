@@ -139,10 +139,19 @@ const google = {
         role: m.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: m.content }],
       }))
+    
+    // Thinking models (e.g., gemini-2.5-pro) need more tokens for reasoning
+    // Set a higher default maxOutputTokens if not specified
+    const hasMaxTokens = config.generationConfig?.maxOutputTokens !== undefined
+    const defaultGenerationConfig = hasMaxTokens ? {} : { maxOutputTokens: 8192 }
+    
     return {
       contents,
       ...(system && { systemInstruction: { parts: [{ text: system }] } }),
-      ...config, // includes nested generationConfig
+      generationConfig: {
+        ...defaultGenerationConfig,
+        ...config.generationConfig,
+      },
       ...providerOptions, // safetySettings, thinkingConfig, etc.
     }
   },
@@ -164,21 +173,40 @@ const google = {
       throw new Error('Google response missing content')
     }
 
-    // Gemini 2.5 Pro may return parts as array or direct text
-    if (Array.isArray(content.parts)) {
-      const text = content.parts[0]?.text
-      if (!text) {
-        // Model may have used all tokens for reasoning (thoughtsTokenCount)
-        const thoughts = data.usageMetadata?.thoughtsTokenCount ?? 0
-        if (finishReason === 'MAX_TOKENS' && thoughts > 0) {
-          throw new Error(`Google response missing content (used ${thoughts} tokens for reasoning, maxTokens may be too low)`)
-        }
-        throw new Error('Google response missing content')
+    // Gemini 2.5 Pro (thinking model) may return content without parts
+    // when all tokens were used for reasoning
+    if (!content.parts || (Array.isArray(content.parts) && content.parts.length === 0)) {
+      const thoughts = data.usageMetadata?.thoughtsTokenCount ?? 0
+      const totalTokens = data.usageMetadata?.totalTokenCount ?? 0
+      
+      if (finishReason === 'MAX_TOKENS' && thoughts > 0) {
+        throw new Error(
+          `Google model used ${thoughts}/${totalTokens} tokens for internal reasoning and has no tokens left for output. ` +
+          `Increase maxTokens to allow room for both thinking and response.`
+        )
       }
-      return text
+      
+      throw new Error('Google response has no content parts')
     }
 
-    // Some models may return content directly
+    // Gemini may return parts as array or direct text
+    if (Array.isArray(content.parts)) {
+      // Concatenate all text parts (model may return multiple text blocks)
+      const texts = content.parts.filter((p) => p.text).map((p) => p.text)
+      if (texts.length === 0) {
+        const thoughts = data.usageMetadata?.thoughtsTokenCount ?? 0
+        if (finishReason === 'MAX_TOKENS' && thoughts > 0) {
+          throw new Error(
+            `Google model used ${thoughts}/${data.usageMetadata?.totalTokenCount ?? 0} tokens for internal reasoning and has no tokens left for output. ` +
+            `Increase maxTokens to allow room for both thinking and response.`
+          )
+        }
+        throw new Error('Google response has no text content')
+      }
+      return texts.join('')
+    }
+
+    // Some models may return content directly as string
     if (typeof content.parts === 'string') {
       return content.parts
     }

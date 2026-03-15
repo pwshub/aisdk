@@ -241,22 +241,40 @@ const result = await ai.ask({
 
 ## Supported Models
 
-This library does not ship with a predefined list of models. Instead, it accepts **any model** from the supported providers:
+The library comes with **30 pre-configured models** from all supported providers:
 
-- **OpenAI**: Any OpenAI model
-- **Anthropic**: Any Anthropic model
-- **Google**: Any Google model
-- **DashScope**: Any DashScope model
-- **DeepSeek**: Any DeepSeek model
+- **OpenAI**: gpt-4.1-nano, gpt-4.1-mini, gpt-4.1, gpt-4o, gpt-4o-mini, gpt-5, gpt-5-mini, gpt-5-nano, gpt-5.1, gpt-5.2, gpt-5.4, o3-mini, o4-mini
+- **Anthropic**: claude-haiku-4-5, claude-sonnet-4-6, claude-sonnet-4-5, claude-opus-4-6
+- **Google**: gemini-2.5-flash, gemini-2.5-flash-lite, gemini-2.5-pro, gemini-3.1-pro-preview, gemini-3.1-flash-lite-preview
+- **DashScope**: qwen-flash, qwen3.5-flash, qwen-plus, qwen3.5-plus, qwen-max, qwen3-max
+- **DeepSeek**: deepseek-chat, deepseek-reasoner
 
-### Loading Models
+### Managing Models
 
-Models are loaded programmatically via `setModels()` from external sources (CMS, API, or local files for evaluation):
+Models are managed via `addModels()` and `setModels()`:
 
 ```javascript
-import { createAi, setModels } from '@pwshub/aisdk'
+import { createAi, addModels, setModels, listModels } from '@pwshub/aisdk'
 
-// Load models from your CMS or API
+// List all available models (30 models loaded by default)
+console.log(listModels())
+
+// Add more models to the existing list
+addModels([
+  {
+    id: 'my-custom-model',
+    name: 'my-custom-model',
+    provider: 'openai',
+    input_price: 1,
+    output_price: 2,
+    cache_price: 0.5,
+    max_in: 128000,
+    max_out: 16384,
+    enable: true,
+  },
+])
+
+// Replace all models with your own list (e.g., from CMS)
 const modelsFromCms = await fetch('https://cms.example.com/api/models').then(r => r.json())
 setModels(modelsFromCms)
 
@@ -267,6 +285,8 @@ const result = await ai.ask({
   prompt: 'Hello!',
 })
 ```
+
+> **Note:** Models are loaded automatically from `src/models.js` when the library is imported. You don't need to call `setModels()` unless you want to use a custom model list.
 
 ### Model Record Format
 
@@ -281,8 +301,6 @@ Each model record should include:
 - `max_out`: Maximum output tokens
 - `enable`: Boolean to enable/disable the model
 - `supportedParams` (optional): Array of supported parameter names
-
-> **Note**: The `examples/` folder includes `models.json` as a reference for running evaluation scripts.
 
 ## Error Handling
 

@@ -2,31 +2,12 @@
  * @fileoverview Shared utilities for provider evaluation scripts.
  */
 
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
-import { join, dirname } from 'node:path'
-import { setModels } from '../src/index.js'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-// models.json is in the same directory as utils.js
-const MODELS_PATH = join(__dirname, 'models.json')
-
-/**
- * Loads models from models.json and registers them via setModels().
- * This is used only for evaluation scripts — the SDK itself does not
- * load models from JSON files.
- */
-export const loadModelsForEval = () => {
-  const models = JSON.parse(readFileSync(MODELS_PATH, 'utf-8'))
-  setModels(models)
-}
-
 /**
  * @typedef {Object} Usage
  * @property {number} inputTokens
  * @property {number} outputTokens
  * @property {number} cacheTokens
+ * @property {number} reasoningTokens
  * @property {number} estimatedCost
  */
 
@@ -97,7 +78,7 @@ export const printResult = (result, modelId) => {
 
 /**
  * Runs multiple test cases for a provider.
- * Loads models from models.json before running tests.
+ * Models are loaded automatically from src/models.js.
  * @param {import('../src/index.js').AskFn} ask
  * @param {string[]} modelIds
  * @param {string[]} prompts
@@ -105,9 +86,6 @@ export const printResult = (result, modelId) => {
  * @param {import('../src/index.js').AskParams} [options]
  */
 export const runEvalSuite = async (ask, modelIds, prompts, apikey, options = {}) => {
-  // Load models from models.json for evaluation
-  loadModelsForEval()
-
   const results = []
 
   for (const modelId of modelIds) {

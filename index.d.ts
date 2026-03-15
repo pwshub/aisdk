@@ -70,5 +70,6 @@ export interface AiClient {
 }
 
 export function createAi(opts?: AiOptions): AiClient;
+export function addModels(models: ModelRecord[]): void;
 export function setModels(models: ModelRecord[]): void;
 export function listModels(): ModelRecord[];

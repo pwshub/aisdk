@@ -1,15 +1,18 @@
 /**
  * @fileoverview Model registry — in-memory store for model records.
  *
- * Models are loaded programmatically via setModels() from external sources
- * (CMS, API, or local files for evaluation). This module provides O(1) lookups
- * at runtime via a Map indexed by model ID.
+ * Default models are loaded automatically from ./models.js at import time.
+ * Users can modify the registry via addModels() and setModels().
+ *
+ * This module provides O(1) lookups at runtime via a Map indexed by model ID.
  *
  * `supportedParams` is optional per record. When absent, the provider's
  * default param set is used.
  *
  * @typedef {'openai'|'anthropic'|'google'|'dashscope'|'deepseek'} ProviderId
  */
+
+import { DEFAULT_MODELS } from './models.js'
 
 /**
  * Mirrors the Directus collection schema exactly.
@@ -47,6 +50,17 @@ const VALID_PROVIDERS = ['openai', 'anthropic', 'google', 'dashscope', 'deepseek
 
 /** @type {Map<string, ModelRecord>} */
 let REGISTRY = new Map()
+
+/**
+ * Initializes the registry with default models.
+ * Called automatically at module import.
+ */
+const initRegistry = () => {
+  REGISTRY = new Map(DEFAULT_MODELS.map((model) => [model.id, model]))
+}
+
+// Initialize with default models on import
+initRegistry()
 
 /**
  * Validates a single model record structure and types.
@@ -143,11 +157,33 @@ export const listModels = () =>
   [...REGISTRY.values()].filter((m) => m.enable)
 
 /**
- * Programmatically sets the model registry from an array of model records.
- * Use this when loading models from a CMS or other external source instead of
- * the built-in models.json file.
+ * Adds one or more models to the registry.
+ * Existing models with the same ID are overwritten.
  *
- * @param {ModelRecord[]} models - Array of model records (same format as models.json)
+ * @param {ModelRecord[]} models - Array of model records to add
+ * @throws {Error} When models is not an array or contains invalid records
+ */
+export const addModels = (models) => {
+  if (!Array.isArray(models)) {
+    throw new Error(`addModels expects an array. Got: ${typeof models}`)
+  }
+
+  // Validate each model record
+  models.forEach((model, index) => {
+    validateModelRecord(model, index)
+  })
+
+  // Add models to the registry
+  models.forEach((model) => {
+    REGISTRY.set(model.id, model)
+  })
+}
+
+/**
+ * Replaces the entire model registry with a new list of models.
+ * Use this to load models from a CMS or other external source.
+ *
+ * @param {ModelRecord[]} models - Array of model records
  * @throws {Error} When models is not an array or contains invalid records
  */
 export const setModels = (models) => {
