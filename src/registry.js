@@ -43,10 +43,12 @@ export const PROVIDER_DEFAULT_PARAMS = {
   google: ['temperature', 'maxTokens', 'topP', 'topK', 'seed', 'stop'],
   dashscope: ['temperature', 'maxTokens', 'topP', 'topK', 'stop'],
   deepseek: ['temperature', 'maxTokens', 'topP', 'frequencyPenalty', 'presencePenalty', 'stop'],
+  mistral: ['temperature', 'maxTokens', 'topP', 'randomSeed', 'stop'],
+  ollama: ['temperature', 'maxTokens', 'topP', 'topK', 'seed', 'stop'],
 }
 
 /** @type {ProviderId[]} */
-const VALID_PROVIDERS = ['openai', 'anthropic', 'google', 'dashscope', 'deepseek']
+const VALID_PROVIDERS = ['openai', 'anthropic', 'google', 'dashscope', 'deepseek', 'mistral', 'ollama']
 
 /** @type {Map<string, ModelRecord>} */
 let REGISTRY = new Map()
@@ -72,34 +74,29 @@ initRegistry()
 const validateModelRecord = (model, index) => {
   const errors = []
 
-  // Check required string fields
-  if (!model.id || typeof model.id !== 'string') {
-    errors.push('"id" must be a non-empty string')
-  }
-
+  // Only name and provider are required
   if (!model.name || typeof model.name !== 'string') {
     errors.push('"name" must be a non-empty string')
   }
 
-  // Check provider is valid
   if (!model.provider || typeof model.provider !== 'string') {
     errors.push('"provider" must be a string')
   } else if (!VALID_PROVIDERS.includes(model.provider)) {
     errors.push(`"provider" must be one of: ${VALID_PROVIDERS.join(', ')}. Got: "${model.provider}"`)
   }
 
-  // Check required number fields (must be non-negative)
+  // Check optional number fields if present (must be non-negative)
   const numberFields = ['input_price', 'output_price', 'cache_price', 'max_in', 'max_out']
   for (const field of numberFields) {
-    if (typeof model[field] !== 'number') {
+    if (model[field] !== undefined && typeof model[field] !== 'number') {
       errors.push(`"${field}" must be a number`)
-    } else if (model[field] < 0) {
+    } else if (model[field] !== undefined && model[field] < 0) {
       errors.push(`"${field}" must be non-negative, got: ${model[field]}`)
     }
   }
 
-  // Check enable is boolean
-  if (typeof model.enable !== 'boolean') {
+  // Check optional enable if present
+  if (model.enable !== undefined && typeof model.enable !== 'boolean') {
     errors.push('"enable" must be a boolean')
   }
 
@@ -122,23 +119,88 @@ const validateModelRecord = (model, index) => {
 }
 
 /**
- * Looks up a model by ID, validates it is enabled, and resolves its
- * effective supported params (record-level override or provider default).
+ * Normalizes a model record by setting defaults for missing fields.
+ * Generates id from provider and name if not provided.
  *
- * @param {string} modelId
+ * @param {Object} model - The model record to normalize
+ * @returns {ModelRecord} Normalized model record
+ */
+const normalizeModelRecord = (model) => {
+  return {
+    id: model.id || `${model.provider}_${model.name}`,
+    name: model.name,
+    provider: model.provider,
+    input_price: model.input_price ?? 0,
+    output_price: model.output_price ?? 0,
+    cache_price: model.cache_price ?? 0,
+    max_in: model.max_in ?? 32000,
+    max_out: model.max_out ?? 8000,
+    enable: model.enable ?? true,
+    ...(model.supportedParams !== undefined && { supportedParams: model.supportedParams }),
+  }
+}
+
+/**
+ * Looks up a model by ID or by name+provider combination.
+ * Validates it is enabled, and resolves its effective supported params.
+ *
+ * Supports two lookup modes:
+ * 1. Direct ID lookup: getModel('some-uuid-123')
+ * 2. Name+provider lookup: getModel('ollama/llama3.2') or getModel('llama3.2', 'ollama')
+ *
+ * @param {string} modelId - Model ID, or name when provider is specified
+ * @param {string} [provider] - Optional provider ID for name+provider lookup
  * @returns {{ record: ModelRecord, supportedParams: string[] }}
  * @throws {Error} When the model is not found or is disabled
  */
-export const getModel = (modelId) => {
-  const record = REGISTRY.get(modelId)
+export const getModel = (modelId, provider) => {
+  let record
+
+  // Mode 1: Direct ID lookup
+  if (!provider && !modelId.includes('/')) {
+    record = REGISTRY.get(modelId)
+  }
+  
+  // Mode 2: Name+provider lookup via "provider/name" format
+  if (!record && !provider && modelId.includes('/')) {
+    const parts = modelId.split('/')
+    if (parts.length === 2) {
+      provider = parts[0]
+      modelId = parts[1]
+    }
+  }
+  
+  // Mode 3: Name+provider lookup via separate arguments
+  if (!record && provider && modelId) {
+    // Search for model by name and provider
+    for (const m of REGISTRY.values()) {
+      if (m.name === modelId && m.provider === provider) {
+        record = m
+        break
+      }
+    }
+  }
+  
+  // Mode 4: Name-only lookup (if name is unique)
+  if (!record && !provider) {
+    for (const m of REGISTRY.values()) {
+      if (m.name === modelId) {
+        record = m
+        break
+      }
+    }
+  }
 
   if (!record) {
-    const available = [...REGISTRY.keys()].join(', ')
+    const available = [...REGISTRY.keys()].map(k => {
+      const m = REGISTRY.get(k)
+      return `${k} (${m.provider}/${m.name})`
+    }).join(', ')
     throw new Error(`Unknown model "${modelId}". Available: ${available}`)
   }
 
   if (!record.enable) {
-    throw new Error(`Model "${modelId}" is currently disabled.`)
+    throw new Error(`Model "${record.id}" (${record.provider}/${record.name}) is currently disabled.`)
   }
 
   const supportedParams = record.supportedParams ?? PROVIDER_DEFAULT_PARAMS[record.provider]
@@ -168,14 +230,15 @@ export const addModels = (models) => {
     throw new Error(`addModels expects an array. Got: ${typeof models}`)
   }
 
-  // Validate each model record
+  // Validate and normalize each model record
   models.forEach((model, index) => {
     validateModelRecord(model, index)
   })
 
-  // Add models to the registry
+  // Add normalized models to the registry
   models.forEach((model) => {
-    REGISTRY.set(model.id, model)
+    const normalized = normalizeModelRecord(model)
+    REGISTRY.set(normalized.id, normalized)
   })
 }
 
@@ -191,10 +254,13 @@ export const setModels = (models) => {
     throw new Error(`setModels expects an array. Got: ${typeof models}`)
   }
 
-  // Validate each model record strictly
+  // Validate and normalize each model record
   models.forEach((model, index) => {
     validateModelRecord(model, index)
   })
 
-  REGISTRY = new Map(models.map((model) => [model.id, model]))
+  REGISTRY = new Map(models.map((model) => {
+    const normalized = normalizeModelRecord(model)
+    return [normalized.id, normalized]
+  }))
 }

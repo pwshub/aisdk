@@ -1,6 +1,6 @@
 # @pwshub/aisdk
 
-A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, and DeepSeek with automatic parameter normalization and fallback support.
+A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, DeepSeek, and Mistral with automatic parameter normalization and fallback support.
 
 [![npm version](https://badge.fury.io/js/@pwshub%2Faisdk.svg)](https://badge.fury.io/js/@pwshub%2Faisdk)
 ![CodeQL](https://github.com/pwshub/aisdk/workflows/CodeQL/badge.svg)
@@ -243,68 +243,148 @@ const result = await ai.ask({
 })
 ```
 
+### Mistral
+
+```javascript
+const result = await ai.ask({
+  model: 'mistral-large-latest',
+  apikey: process.env.MISTRAL_API_KEY,
+  prompt: 'Hello',
+  temperature: 0.7,
+})
+```
+
+### Mistral with Random Seed
+
+For reproducible results, use `randomSeed`:
+
+```javascript
+const result = await ai.ask({
+  model: 'mistral-medium-latest',
+  apikey: process.env.MISTRAL_API_KEY,
+  prompt: 'Write a poem',
+  randomSeed: 42,
+})
+```
+
 ## Supported Models
 
-The library comes with **30 pre-configured models** from all supported providers:
+The library comes with **34 pre-configured models** from all supported providers:
 
 - **OpenAI**: gpt-4.1-nano, gpt-4.1-mini, gpt-4.1, gpt-4o, gpt-4o-mini, gpt-5, gpt-5-mini, gpt-5-nano, gpt-5.1, gpt-5.2, gpt-5.4, o3-mini, o4-mini
 - **Anthropic**: claude-haiku-4-5, claude-sonnet-4-6, claude-sonnet-4-5, claude-opus-4-6
 - **Google**: gemini-2.5-flash, gemini-2.5-flash-lite, gemini-2.5-pro, gemini-3.1-pro-preview, gemini-3.1-flash-lite-preview
 - **DashScope**: qwen-flash, qwen3.5-flash, qwen-plus, qwen3.5-plus, qwen-max, qwen3-max
 - **DeepSeek**: deepseek-chat, deepseek-reasoner
+- **Mistral**: mistral-small-latest, mistral-medium-latest, mistral-large-latest, codestral-latest
 
-### Managing Models
+## Model Management
 
-Models are managed via `addModels()` and `setModels()`:
+Models are automatically loaded from the built-in registry when the library is imported. You can add custom models or replace the entire list with your own (e.g., from a CMS).
+
+### Adding Custom Models
+
+Use `addModels()` to add models to the existing registry. Only `name` and `provider` are required — other fields get sensible defaults:
 
 ```javascript
-import { createAi, addModels, setModels, listModels } from '@pwshub/aisdk'
+import { createAi, addModels, listModels } from '@pwshub/aisdk'
 
-// List all available models (30 models loaded by default)
-console.log(listModels())
+// Add minimal model records (auto-generates ID and sets defaults)
+addModels([
+  { name: 'llama3.2', provider: 'ollama' },
+  { name: 'mistral', provider: 'ollama' },
+  { name: 'gemma3', provider: 'ollama' },
+])
 
-// Add more models to the existing list
+// Add models with custom pricing
 addModels([
   {
-    id: 'my-custom-model',
     name: 'my-custom-model',
     provider: 'openai',
-    input_price: 1,
-    output_price: 2,
-    cache_price: 0.5,
+    input_price: 0.5,
+    output_price: 1.5,
     max_in: 128000,
     max_out: 16384,
-    enable: true,
   },
 ])
 
-// Replace all models with your own list (e.g., from CMS)
+// View all available models
+console.log(listModels())
+```
+
+**Default values for missing fields:**
+- `id`: Auto-generated as `${provider}_${name}` (e.g., `ollama_llama3.2`)
+- `input_price`, `output_price`, `cache_price`: `0`
+- `max_in`: `32000`
+- `max_out`: `8000`
+- `enable`: `true`
+
+### Loading Models from CMS
+
+Use `setModels()` to replace the entire registry with models from your CMS:
+
+```javascript
+import { createAi, setModels } from '@pwshub/aisdk'
+
+// Fetch models from your CMS
 const modelsFromCms = await fetch('https://cms.example.com/api/models').then(r => r.json())
+
+// Expected format from CMS:
+// [
+//   { id: 'uuid-123', name: 'llama3.2', provider: 'ollama', ... },
+//   { id: 'uuid-456', name: 'mistral', provider: 'ollama', ... }
+// ]
+
 setModels(modelsFromCms)
 
 const ai = createAi()
-const result = await ai.ask({
-  model: 'gemini-2.5-flash',
-  apikey: 'your-api-key',
-  prompt: 'Hello!',
+```
+
+> **Note:** Model `id` can be any unique string (UUID, slug, etc.). The library uses it for internal tracking. When using models from CMS, you reference them by `provider/name` format (see below).
+
+### Using Models
+
+Models can be referenced in three ways:
+
+```javascript
+const ai = createAi()
+
+// Method 1: provider/name format (recommended for CMS models)
+await ai.ask({
+  model: 'ollama/llama3.2',
+  apikey: '',
+  prompt: 'Hello',
+})
+
+// Method 2: Direct ID lookup (for predefined models)
+await ai.ask({
+  model: 'gpt-4o',
+  apikey: process.env.OPENAI_API_KEY,
+  prompt: 'Hello',
+})
+
+// Method 3: Name-only lookup (if name is unique across providers)
+await ai.ask({
+  model: 'llama3.2',
+  apikey: '',
+  prompt: 'Hello',
 })
 ```
 
-> **Note:** Models are loaded automatically from `src/models.js` when the library is imported. You don't need to call `setModels()` unless you want to use a custom model list.
-
 ### Model Record Format
 
-Each model record should include:
-- `id`: Model identifier used in requests
-- `name`: Official model name (used in API calls)
-- `provider`: Provider ID (openai, anthropic, google, dashscope, deepseek)
-- `input_price`: Price per 1M input tokens (USD)
-- `output_price`: Price per 1M output tokens (USD)
-- `cache_price`: Price per 1M cached tokens (USD)
-- `max_in`: Maximum input tokens (context window)
-- `max_out`: Maximum output tokens
-- `enable`: Boolean to enable/disable the model
-- `supportedParams` (optional): Array of supported parameter names
+| Field | Required | Default | Description |
+|-------|----------|---------|-------------|
+| `name` | Yes | - | Model name used in API calls |
+| `provider` | Yes | - | Provider ID (openai, anthropic, google, dashscope, deepseek, mistral, ollama) |
+| `id` | No | `${provider}_${name}` | Unique identifier (auto-generated if not provided) |
+| `input_price` | No | `0` | Price per 1M input tokens (USD) |
+| `output_price` | No | `0` | Price per 1M output tokens (USD) |
+| `cache_price` | No | `0` | Price per 1M cached tokens (USD) |
+| `max_in` | No | `32000` | Maximum input tokens (context window) |
+| `max_out` | No | `8000` | Maximum output tokens |
+| `enable` | No | `true` | Enable/disable the model |
+| `supportedParams` | No | Provider defaults | Array of supported parameter names |
 
 ## Error Handling
 
@@ -351,6 +431,9 @@ DASHSCOPE_API_KEY=your-key npm run eval:dashscope
 
 # DeepSeek
 DEEPSEEK_API_KEY=your-key npm run eval:deepseek
+
+# Mistral
+MISTRAL_API_KEY=your-key npm run eval:mistral
 ```
 
 ## Development
@@ -379,4 +462,4 @@ npm run lint:fix
 
 ## License
 
-MIT
+The MIT License (MIT)

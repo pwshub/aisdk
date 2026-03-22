@@ -1,0 +1,298 @@
+# @pwshub/aisdk - LLM Documentation Guide
+
+A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, DeepSeek, Mistral, and Ollama with automatic parameter normalization and fallback support.
+
+## Quick Start
+
+```bash
+npm install @pwshub/aisdk
+
+# or
+pnpm i @pwshub/aisdk
+
+# or
+bun add @pwshub/aisdk
+```
+
+```javascript
+import { createAi } from '@pwshub/aisdk'
+
+const ai = createAi()
+const result = await ai.ask({
+  model: 'gpt-4o',
+  apikey: 'your-api-key',
+  prompt: 'Hello!',
+})
+```
+
+## Core Concepts
+
+### Supported Providers
+
+- **OpenAI**: GPT-4, GPT-5, o3, o4 series
+- **Anthropic**: Claude Haiku, Sonnet, Opus
+- **Google**: Gemini 2.5, 3.1 series
+- **DashScope**: Qwen series (Alibaba Cloud)
+- **DeepSeek**: Chat and Reasoner models
+- **Mistral**: Small, Medium, Large, Codestral
+- **Ollama**: Local models (llama3.2, mistral, gemma3, etc.)
+
+### Model Lookup
+
+Models can be referenced three ways:
+
+1. **provider/name** (recommended for custom models): `'ollama/llama3.2'`
+2. **Direct ID** (predefined models): `'gpt-4o'`
+3. **Name-only** (if unique): `'llama3.2'`
+
+### Key Features
+
+- **Unified API**: Single `ask()` method for all providers
+- **Auto-normalization**: Canonical params → provider wire format
+- **Auto-clamping**: Values clamped to provider ranges
+- **Fallback support**: Chain models with automatic fallback
+- **Token tracking**: Input, output, cache, reasoning tokens + cost
+- **Messages support**: Multi-turn conversations with `{role, content}` array
+
+## API Reference
+
+### createAi(options?)
+
+```javascript
+import { createAi } from '@pwshub/aisdk'
+
+const ai = createAi({
+  gatewayUrl: 'https://custom-endpoint.com/v1', // optional
+})
+```
+
+### ai.ask(params)
+
+```javascript
+const result = await ai.ask({
+  model: 'gpt-4o',           // required - model ID or provider/name
+  apikey: 'your-key',        // required - API key (empty string for Ollama)
+  prompt: 'Hello',           // required (or use messages)
+  system: 'You are helpful', // optional - system prompt
+  messages: [                // optional - alternative to prompt
+    { role: 'user', content: 'Hello' },
+    { role: 'assistant', content: 'Hi!' },
+    { role: 'user', content: 'How are you?' },
+  ],
+  fallbacks: ['gpt-4o-mini'], // optional - fallback models
+  temperature: 0.7,           // optional - sampling temperature
+  maxTokens: 500,             // optional - max output tokens
+  topP: 1,                    // optional - nucleus sampling
+  topK: 50,                   // optional - top-K sampling
+  providerOptions: {          // optional - provider-specific options
+    safetySettings: [...],
+    thinkingConfig: {...},
+  },
+})
+
+// Result
+{
+  text: 'Generated text...',
+  model: 'gpt-4o',
+  usage: {
+    inputTokens: 10,
+    outputTokens: 50,
+    cacheTokens: 0,
+    reasoningTokens: 100,
+    estimatedCost: 0.00015,
+  }
+}
+```
+
+### Model Management
+
+```javascript
+import { addModels, setModels, listModels } from '@pwshub/aisdk'
+
+// Add models (only name + provider required)
+addModels([
+  { name: 'llama3.2', provider: 'ollama' },
+  { name: 'mistral', provider: 'ollama' },
+])
+
+// Replace all models (e.g., from CMS)
+setModels([
+  { id: 'uuid-123', name: 'llama3.2', provider: 'ollama' },
+  { id: 'uuid-456', name: 'mistral', provider: 'ollama' },
+])
+
+// List all models
+const models = listModels()
+```
+
+**Default values for missing fields:**
+- `id`: `${provider}_${name}`
+- `input_price`, `output_price`, `cache_price`: `0`
+- `max_in`: `32000`
+- `max_out`: `8000`
+- `enable`: `true`
+
+## Provider-Specific Notes
+
+### Google (Gemini)
+
+Thinking models use tokens for reasoning. Set higher `maxTokens` or disable thinking:
+
+```javascript
+await ai.ask({
+  model: 'gemini-2.5-pro',
+  apikey: process.env.GOOGLE_API_KEY,
+  prompt: 'Hello',
+  maxTokens: 2048, // Higher for thinking models
+  providerOptions: {
+    thinkingConfig: {
+      thinkingBudget: 0,      // Disable thinking
+      includeThoughts: false,
+    },
+  },
+})
+```
+
+### Ollama
+
+Local deployment, optional API key for remote instances:
+
+```javascript
+// Local
+await ai.ask({
+  model: 'ollama/llama3.2',
+  apikey: '',
+  prompt: 'Hello',
+})
+
+// Remote with auth
+await ai.ask({
+  model: 'ollama/llama3.2',
+  apikey: process.env.OLLAMA_API_KEY,
+  prompt: 'Hello',
+})
+
+// Custom base URL
+const ai = createAi({ gatewayUrl: 'https://ollama.example.com/api/chat' })
+```
+
+### DashScope
+
+Regional endpoints available:
+
+```javascript
+// Singapore
+const ai = createAi({ gatewayUrl: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1' })
+
+// US (Virginia)
+const ai = createAi({ gatewayUrl: 'https://dashscope-us.aliyuncs.com/compatible-mode/v1' })
+
+// China (Beijing)
+const ai = createAi({ gatewayUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1' })
+```
+
+## Error Handling
+
+```javascript
+import { ProviderError, InputError } from '@pwshub/aisdk'
+
+try {
+  const result = await ai.ask({...})
+} catch (error) {
+  if (error instanceof ProviderError) {
+    // Rate limit, server error - safe to retry or fallback
+    console.error('Provider error:', error.status, error.message)
+  } else if (error instanceof InputError) {
+    // Bad request, invalid API key - fix input, don't retry
+    console.error('Input error:', error.status, error.message)
+  }
+}
+```
+
+## File Structure
+
+```
+aisdk/
+├── src/
+│   ├── index.js        # Main entry point, createAi(), ask()
+│   ├── providers.js    # Provider adapters (headers, URLs, parsing)
+│   ├── registry.js     # Model registry, addModels(), setModels()
+│   ├── models.js       # Default model definitions (34 models)
+│   ├── config.js       # Parameter normalization (canonical → wire format)
+│   ├── coerce.js       # Parameter clamping to provider ranges
+│   ├── validation.js   # Input validation
+│   └── errors.js       # Error classes (ProviderError, InputError)
+├── examples/           # Provider evaluation scripts
+├── test/               # Unit tests
+├── index.d.ts          # TypeScript definitions
+└── package.json
+```
+
+## Key Files for AI Agents
+
+| File | Purpose |
+|------|---------|
+| `src/index.js` | Main API: `createAi()`, `ask()`, request flow |
+| `src/providers.js` | Provider adapters: headers, URLs, request/response format |
+| `src/registry.js` | Model management: `addModels()`, `setModels()`, `getModel()` |
+| `src/config.js` | Parameter normalization: canonical → wire format mapping |
+| `src/models.js` | Default model definitions (34 pre-configured models) |
+| `index.d.ts` | TypeScript type definitions |
+
+## Common Patterns
+
+### Multi-turn Conversation
+
+```javascript
+const result = await ai.ask({
+  model: 'claude-sonnet-4-6',
+  apikey: process.env.ANTHROPIC_API_KEY,
+  messages: [
+    { role: 'user', content: 'What is TypeScript?' },
+    { role: 'assistant', content: 'TypeScript is a typed superset of JavaScript...' },
+    { role: 'user', content: 'Give me an example' },
+  ],
+})
+```
+
+### With Fallbacks
+
+```javascript
+const result = await ai.ask({
+  model: 'gpt-4o',
+  apikey: process.env.OPENAI_API_KEY,
+  prompt: 'Hello',
+  fallbacks: ['gpt-4o-mini', 'claude-haiku-4-5'],
+})
+
+if (result.model !== 'gpt-4o') {
+  console.warn(`Fell back to ${result.model}`)
+}
+```
+
+### Cost Estimation
+
+```javascript
+const result = await ai.ask({...})
+console.log(`Estimated cost: $${result.usage.estimatedCost}`)
+// Based on model pricing: (inputTokens/1M * input_price) + (outputTokens/1M * output_price)
+```
+
+## Environment Variables
+
+| Variable | Provider | Required |
+|----------|----------|----------|
+| `OPENAI_API_KEY` | OpenAI | Yes |
+| `ANTHROPIC_API_KEY` | Anthropic | Yes |
+| `GOOGLE_API_KEY` | Google | Yes |
+| `DASHSCOPE_API_KEY` | DashScope | Yes |
+| `DEEPSEEK_API_KEY` | DeepSeek | Yes |
+| `MISTRAL_API_KEY` | Mistral | Yes |
+| `OLLAMA_API_KEY` | Ollama | Optional (local) |
+
+## Links
+
+- [npm package](https://www.npmjs.com/package/@pwshub/aisdk)
+- [GitHub repository](https://github.com/pwshub/aisdk)
+- [Full README](./README.md)
+- [TypeScript definitions](./index.d.ts)

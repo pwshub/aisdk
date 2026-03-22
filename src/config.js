@@ -21,6 +21,7 @@
  * @property {number} [topK]
  * @property {number} [frequencyPenalty]
  * @property {number} [presencePenalty]
+ * @property {number} [randomSeed]
  */
 
 /**
@@ -146,6 +147,35 @@ const WIRE_KEYS = {
         min: -2, max: 2,
       },
     },
+  },
+  mistral: {
+    temperature: {
+      wireKey: 'temperature', range: {
+        min: 0, max: 2,
+      },
+    },
+    maxTokens: { wireKey: 'max_tokens' },
+    topP: {
+      wireKey: 'top_p', range: {
+        min: 0, max: 1,
+      },
+    },
+    randomSeed: { wireKey: 'random_seed' },
+  },
+  ollama: {
+    temperature: {
+      wireKey: 'temperature', range: {
+        min: 0, max: 2,
+      },
+    },
+    maxTokens: { wireKey: 'num_predict' },
+    topP: {
+      wireKey: 'top_p', range: {
+        min: 0, max: 1,
+      },
+    },
+    topK: { wireKey: 'top_k' },
+    seed: { wireKey: 'seed' },
   },
 }
 
