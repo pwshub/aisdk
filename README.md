@@ -73,8 +73,8 @@ Creates an AI client instance.
 Sends a text generation request.
 
 **Parameters:**
-- `model` (string, required): Model name or `provider/name` format (e.g., `'gpt-4o'`, `'ollama/llama3.2'`)
-- `apikey` (string, required): API key for the provider
+- `model` (string, required): Use `provider/name` format (e.g., `anthropic/claude-sonnet-4-6`)
+- `apikey` (string, required): API key for the provider. With ollama local, set to any string.
 - `prompt` (string, required): The user message
 - `system` (string, optional): Optional system prompt
 - `fallbacks` (string[], optional): Ordered list of fallback models (same format as `model`)
@@ -269,14 +269,7 @@ const result = await ai.ask({
 
 ## Supported Models
 
-The library comes with **34 pre-configured models** from all supported providers:
-
-- **OpenAI**: gpt-4.1-nano, gpt-4.1-mini, gpt-4.1, gpt-4o, gpt-4o-mini, gpt-5, gpt-5-mini, gpt-5-nano, gpt-5.1, gpt-5.2, gpt-5.4, o3-mini, o4-mini
-- **Anthropic**: claude-haiku-4-5, claude-sonnet-4-6, claude-sonnet-4-5, claude-opus-4-6
-- **Google**: gemini-2.5-flash, gemini-2.5-flash-lite, gemini-2.5-pro, gemini-3.1-pro-preview, gemini-3.1-flash-lite-preview
-- **DashScope**: qwen-flash, qwen3.5-flash, qwen-plus, qwen3.5-plus, qwen-max, qwen3-max
-- **DeepSeek**: deepseek-chat, deepseek-reasoner
-- **Mistral**: mistral-small-latest, mistral-medium-latest, mistral-large-latest, codestral-latest
+The library comes with just a few popular models configured in src/models.js
 
 ## Model Management
 
