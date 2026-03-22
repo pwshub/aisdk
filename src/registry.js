@@ -43,10 +43,11 @@ export const PROVIDER_DEFAULT_PARAMS = {
   google: ['temperature', 'maxTokens', 'topP', 'topK', 'seed', 'stop'],
   dashscope: ['temperature', 'maxTokens', 'topP', 'topK', 'stop'],
   deepseek: ['temperature', 'maxTokens', 'topP', 'frequencyPenalty', 'presencePenalty', 'stop'],
+  mistral: ['temperature', 'maxTokens', 'topP', 'randomSeed', 'stop'],
 }
 
 /** @type {ProviderId[]} */
-const VALID_PROVIDERS = ['openai', 'anthropic', 'google', 'dashscope', 'deepseek']
+const VALID_PROVIDERS = ['openai', 'anthropic', 'google', 'dashscope', 'deepseek', 'mistral']
 
 /** @type {Map<string, ModelRecord>} */
 let REGISTRY = new Map()

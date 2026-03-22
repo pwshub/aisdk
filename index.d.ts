@@ -6,11 +6,17 @@ export interface AiOptions {
   gatewayUrl?: string;
 }
 
+export interface Message {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+}
+
 export interface AskParams {
   model: string;
   apikey: string;
-  prompt: string;
+  prompt?: string;
   system?: string;
+  messages?: Message[];
   fallbacks?: string[];
   providerOptions?: Record<string, unknown>;
   temperature?: number;
@@ -19,6 +25,7 @@ export interface AskParams {
   topK?: number;
   frequencyPenalty?: number;
   presencePenalty?: number;
+  randomSeed?: number;
 }
 
 export interface Usage {

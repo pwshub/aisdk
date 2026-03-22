@@ -10,7 +10,7 @@
  */
 
 /**
- * @typedef {'openai'|'anthropic'|'google'|'dashscope'|'deepseek'} ProviderId
+ * @typedef {'openai'|'anthropic'|'google'|'dashscope'|'deepseek'|'mistral'} ProviderId
  */
 
 /**
@@ -298,9 +298,38 @@ const deepseek = {
   }),
 }
 
+/** @type {ProviderAdapter} */
+const mistral = {
+  headers: (apikey) => ({
+    Authorization: `Bearer ${apikey}`,
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  }),
+  url: () => 'https://api.mistral.ai/v1/chat/completions',
+  buildBody: (modelName, messages, config, providerOptions) => ({
+    model: modelName,
+    messages,
+    ...config,
+    ...providerOptions,
+  }),
+  extractText: (data) => {
+    const content = data.choices?.[0]?.message?.content
+    if (!content) {
+      throw new Error('Mistral response missing content')
+    }
+    return content
+  },
+  extractUsage: (data) => ({
+    inputTokens: data.usage?.prompt_tokens ?? 0,
+    outputTokens: data.usage?.completion_tokens ?? 0,
+    cacheTokens: 0,
+    reasoningTokens: 0,
+  }),
+}
+
 /** @type {Record<string, ProviderAdapter>} */
 const ADAPTERS = {
-  openai, anthropic, google, dashscope, deepseek,
+  openai, anthropic, google, dashscope, deepseek, mistral,
 }
 
 /**
