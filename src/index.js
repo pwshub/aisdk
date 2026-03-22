@@ -145,9 +145,21 @@ const calcCost = (usage, record) => {
  * @throws {InputError} On 4xx — do not retry, fix the input
  */
 const callModel = async (modelId, params, gatewayUrl) => {
+  // Support "provider/name" format for model lookup
+  let lookupModelId = modelId
+  let lookupProvider
+  
+  if (modelId.includes('/')) {
+    const parts = modelId.split('/')
+    if (parts.length === 2) {
+      lookupProvider = parts[0]
+      lookupModelId = parts[1]
+    }
+  }
+  
   const {
     record, supportedParams,
-  } = getModel(modelId)
+  } = getModel(lookupModelId, lookupProvider)
   const {
     provider: providerId, name: modelName,
   } = record

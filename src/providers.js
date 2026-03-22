@@ -10,7 +10,7 @@
  */
 
 /**
- * @typedef {'openai'|'anthropic'|'google'|'dashscope'|'deepseek'|'mistral'} ProviderId
+ * @typedef {'openai'|'anthropic'|'google'|'dashscope'|'deepseek'|'mistral'|'ollama'} ProviderId
  */
 
 /**
@@ -327,9 +327,50 @@ const mistral = {
   }),
 }
 
+/** @type {ProviderAdapter} */
+const ollama = {
+  headers: (apikey) => ({
+    'Content-Type': 'application/json',
+    ...(apikey && { Authorization: `Bearer ${apikey}` }),
+  }),
+  // Default to localhost, but can be overridden via gatewayUrl
+  url: () => 'http://localhost:11434/api/chat',
+  buildBody: (modelName, messages, config, providerOptions) => {
+    // Ollama uses snake_case options
+    const options = {}
+    if (config.temperature !== undefined) options.temperature = config.temperature
+    if (config.top_p !== undefined) options.top_p = config.top_p
+    if (config.top_k !== undefined) options.top_k = config.top_k
+    if (config.num_predict !== undefined) options.num_predict = config.num_predict
+    if (config.seed !== undefined) options.seed = config.seed
+    if (config.stop !== undefined) options.stop = config.stop
+    
+    return {
+      model: modelName,
+      messages,
+      stream: false,
+      ...providerOptions,
+      ...(Object.keys(options).length > 0 && { options }),
+    }
+  },
+  extractText: (data) => {
+    const content = data.message?.content
+    if (!content) {
+      throw new Error('Ollama response missing content')
+    }
+    return content
+  },
+  extractUsage: (data) => ({
+    inputTokens: data.prompt_eval_count ?? 0,
+    outputTokens: data.eval_count ?? 0,
+    cacheTokens: 0,
+    reasoningTokens: 0,
+  }),
+}
+
 /** @type {Record<string, ProviderAdapter>} */
 const ADAPTERS = {
-  openai, anthropic, google, dashscope, deepseek, mistral,
+  openai, anthropic, google, dashscope, deepseek, mistral, ollama,
 }
 
 /**

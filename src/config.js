@@ -162,6 +162,21 @@ const WIRE_KEYS = {
     },
     randomSeed: { wireKey: 'random_seed' },
   },
+  ollama: {
+    temperature: {
+      wireKey: 'temperature', range: {
+        min: 0, max: 2,
+      },
+    },
+    maxTokens: { wireKey: 'num_predict' },
+    topP: {
+      wireKey: 'top_p', range: {
+        min: 0, max: 1,
+      },
+    },
+    topK: { wireKey: 'top_k' },
+    seed: { wireKey: 'seed' },
+  },
 }
 
 /**

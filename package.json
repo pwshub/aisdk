@@ -1,7 +1,7 @@
 {
   "name": "@pwshub/aisdk",
   "version": "0.0.4",
-  "description": "A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, and DeepSeek with automatic param normalization and fallback support",
+  "description": "A thin, unified AI client for OpenAI, Anthropic, Google, DashScope, DeepSeek, and Mistral with automatic param normalization and fallback support",
   "repository": {
     "type": "git",
     "url": "https://github.com/pwshub/aisdk"
@@ -22,14 +22,15 @@
     "index.d.ts"
   ],
   "scripts": {
-    "test": "node --test test/*.test.js",
-    "lint": "eslint src/ test/",
-    "lint:fix": "eslint src/ test/ --fix",
+    "test": "node --test src/*.test.js",
+    "lint": "eslint src/",
+    "lint:fix": "eslint src/ --fix",
     "eval:openai": "node examples/openai.js",
     "eval:anthropic": "node examples/anthropic.js",
     "eval:google": "node examples/google.js",
     "eval:dashscope": "node examples/dashscope.js",
-    "eval:deepseek": "node examples/deepseek.js"
+    "eval:deepseek": "node examples/deepseek.js",
+    "eval:mistral": "node examples/mistral.js"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -47,6 +48,7 @@
     "gpt",
     "qwen",
     "deepseek",
+    "mistral",
     "chat",
     "generation",
     "sdk"

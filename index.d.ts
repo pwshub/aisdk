@@ -26,6 +26,8 @@ export interface AskParams {
   frequencyPenalty?: number;
   presencePenalty?: number;
   randomSeed?: number;
+  seed?: number;
+  numPredict?: number;
 }
 
 export interface Usage {
@@ -43,15 +45,15 @@ export interface AskResult {
 }
 
 export interface ModelRecord {
-  id: string;
+  id?: string;
   name: string;
   provider: string;
-  input_price: number;
-  output_price: number;
-  cache_price: number;
-  max_in: number;
-  max_out: number;
-  enable: boolean;
+  input_price?: number;
+  output_price?: number;
+  cache_price?: number;
+  max_in?: number;
+  max_out?: number;
+  enable?: boolean;
   supportedParams?: string[];
 }
 

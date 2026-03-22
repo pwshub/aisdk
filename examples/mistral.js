@@ -12,8 +12,7 @@ import { runEvalSuite } from './utils.js'
 const MODELS = [
   'mistral-small-latest',
   'mistral-medium-latest',
-  'mistral-large-latest',
-  'codestral-latest',
+  'magistral-small-latest',
 ]
 
 const PROMPTS = [
